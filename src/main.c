@@ -12,7 +12,7 @@
 #define DEF_FONT_SIZE 24
 
 int main(int argc, char *argv[]) {
-    SDL_Color fg = {102, 178, 255, 255};
+    SDL_Color bg = {102, 178, 255, 255};
     manager *mn = init_manager("minesweeper", SCREEN_WIDTH, SCREEN_HEIGHT, 
                         SDL_INIT_VIDEO, 0, 0, IMG_INIT_PNG, fg);
     load_images_textures(mn, "../res/gfx");
