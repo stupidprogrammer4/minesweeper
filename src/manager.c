@@ -3,19 +3,24 @@
 #include "manager.h"
 #include "game.h"
 #include "common.h"
-#include "clock.h"
+#include "utils.h"
+
+#define DEF_BTN_SW 120
+#define DEF_BTN_SH 50
+
+SDL_Rect cl_rect = {950, 15, 70, 20};
+SDL_Color black = {0, 0, 0, 255};
+SDL_Color white = {255, 255, 255, 255};
+SDL_Color red = {255, 0, 0, 255};
+SDL_Color blue = {0, 0, 255, 255};
+SDL_Color green = {0, 255, 0, 255};
+SDL_Color def_btn = {0, 128, 255, 255};
+
+ui_button *menu_buttons[10], *game_buttons[10]; 
 
 
-SDL_Rect cl_rect = {10, 15, 70, 20};
-SDL_Color cl_fg = {0, 0, 0, 255};
-bool run = 1, gamover=0;
+bool gamover=0;
 
-
-static 
-void close_font_helper(void *ttf_font);
-
-static 
-void destroy_texture_helper(void *texture);
 
 static inline
 char *font_key(const char *font_name, usize size);
@@ -26,8 +31,6 @@ char *filename(const char *fullname);
 static inline 
 char *f_basename(const char *path);
 
-static inline
-SDL_Texture *load_img_texture(SDL_Renderer *ren, const char *path);
 
 static inline
 char *get_fullpath(const char *path, const char *name);
@@ -64,20 +67,6 @@ char *filename(const char *fullname){
     return f_name;
 }
 
-static inline
-SDL_Texture *load_img_texture(SDL_Renderer *ren, const char *path) {
-    SDL_Surface *img_surface = IMG_Load(path);
-    if (!img_surface) {
-        fprintf(stderr, "IMG_Load() failed: %s\n", SDL_GetError());
-    }
-    SDL_Texture *img_texture = SDL_CreateTextureFromSurface(ren, img_surface);
-    if (!img_texture) {
-        fprintf(stderr, "IMG_CreateTextureFromSurface() failed: %s\n", SDL_GetError());
-        exit(1);
-    }
-    SDL_FreeSurface(img_surface);
-    return img_texture;
-}
 
 static inline
 char *get_fullpath(const char *path, const char *name) {
@@ -87,11 +76,6 @@ char *get_fullpath(const char *path, const char *name) {
     return result;
 }
 
-static
-void destroy_texture_helper(void *texture) {
-    SDL_Texture **ptr = texture;
-    SDL_DestroyTexture(*ptr);
-}
 
 manager *init_manager(const char *title, int screen_width, int screen_height, 
         u32 sdl_flags ,u32 win_flags, u32 ren_flags, u32 img_flags, SDL_Color back_color)
@@ -100,6 +84,8 @@ manager *init_manager(const char *title, int screen_width, int screen_height,
     mn->screen_height = screen_height;
     mn->screen_width = screen_width;
     mn->back_color = back_color;
+    mn->state = 0;
+    mn->run = 1;
     mn->textures = def_init_dict(sizeof(SDL_Texture *), destroy_texture_helper);
     if (SDL_Init(sdl_flags) < 0) {
         fprintf(stderr, "SDL_Init() failed: %s\n", SDL_GetError());
@@ -134,53 +120,103 @@ manager *init_manager(const char *title, int screen_width, int screen_height,
     return mn;
 }
 
+void build_menu_ui(manager *mn) {
+    int i;
+    char *items[] = {"10*10", "15*15", "20*20", "30*30", "load"};
+    for (i=0; i<5; i++) {
+        SDL_Texture *texture = create_text_texture(mn->ren, items[i], mn->font, mn->back_color);
+        dict_insert(mn->textures, items[i], &texture);
+    } 
+    int w = (mn->screen_width-60)/2, h=(mn->screen_height-120)/2; 
+    for (i=0; i<4; i++) {
+        SDL_Rect rect = {20+((i%2)*w)+((i%2)*20), 10+((i/2)*h)+((i/2)*20), w, h};
+        SDL_Texture *texture = DICT_GET_VAL(SDL_Texture *, mn->textures, items[i]);
+        menu_buttons[i] = init_button(rect, mn->back_color, def_btn, texture, items[i], 100, 50);
+    }
+    //SDL_Texture *texture = DICT_GET_VAL(SDL_Texture *, mn->textures, "load");
+    //SDL_Rect rect = {mn->screen_width/2-(DEF_BTN_SW/2), h+h+40, DEF_BTN_SW, DEF_BTN_SH};
+    //menu_buttons[4] = init_button(rect, mn->back_color, def_btn, texture, "load", DEF_BTN_SW-40, DEF_BTN_SH-10);
+}
+
+void run_game(manager *mn) {
+    SDL_Rect state = {900, mn->screen_height/2+10, 200, 100};
+    bool clicked=0, rightclick=0;
+    int mx, my;
+    while (SDL_PollEvent(&mn->e)) {
+        if (mn->e.type == SDL_QUIT) {
+            mn->run = 0;
+            break;
+        }
+        else if (mn->e.type == SDL_MOUSEBUTTONDOWN) {
+            mx = mn->e.button.x; my = mn->e.button.y;
+            clicked = 1;
+            rightclick = mn->e.button.button == SDL_BUTTON_RIGHT;
+        }
+    }
+    if (clicked)
+        update_game(mn->gm, mx, my, rightclick);
+    if (mn->gm->over) {
+        stop_clock(mn->clock);
+        SDL_RenderCopy(mn->ren, DICT_GET_VAL(SDL_Texture *, mn->textures, "YOU LOSE!"), NULL, &state);
+    }
+    draw_grid(mn->gm);
+    show_clock(mn->clock);
+}
+
+void build_game_ui(manager *mn) {
+    mn->clock = init_clock(mn, mn->font, cl_rect, black);
+    SDL_Texture *losing = create_text_texture(mn->ren, "YOU LOSE!", mn->font, red);
+    dict_insert(mn->textures, "YOU LOSE!", &losing);
+}
+
+void run_menu(manager *mn) {
+    bool clicked=0;
+    int mx, my;
+    while (SDL_PollEvent(&mn->e)) {
+        if (mn->e.type == SDL_QUIT) {
+            mn->run = 0;
+            break;
+        }
+        else if (mn->e.type == SDL_MOUSEBUTTONDOWN) {
+            mx = mn->e.button.x; my = mn->e.button.y;
+            clicked = mn->e.button.button == SDL_BUTTON_LEFT;
+        }
+    }
+    int ind=-1;
+    for (int i=0; i<4; i++) 
+        show_button(menu_buttons[i], mn->ren);
+    if (clicked)
+        for (int i=0; i<4; i++)
+            if (is_clicked(menu_buttons[i], mx, my)) {
+                ind = i;
+                mn->state = 1;
+                break;
+            }   
+    switch (ind)
+    {
+    case 0:
+        build_game(mn, 10, 10, mn->screen_height/10, 15);
+        break;
+    case 1:
+        build_game(mn, 15, 15, mn->screen_height/15, 35);
+        break;
+    case 2:
+        build_game(mn, 20, 20, mn->screen_height/20, 62);
+        break;
+    case 3:
+        build_game(mn, 30, 30, mn->screen_height/30, 140);
+    default:
+        break;
+    }
+}
+
 void build_game(manager *mn, int row, int col, 
         int tile_size, int mine_count) 
 {
-    int st_row = mn->screen_height - (tile_size*row);
-    int st_col = mn->screen_width - (tile_size*col);
-    mn->gm = init_game(mn, row, col, st_row, 
-            st_col, tile_size, mine_count);
+    mn->gm = init_game(mn, row, col, 0, 
+            0, mn->clock, tile_size, mine_count);
 }
 
-void start_game(manager *mn) {
-    mn->cl = init_clock(mn, mn->font, cl_rect, cl_fg);
-    int mx, my;
-    SDL_Event e;
-    
-
-    bool clicked, flag;
-    while (run) {
-        SDL_SetRenderDrawColor(mn->ren, mn->back_color.r, mn->back_color.g, mn->back_color.b, mn->back_color.a);
-        SDL_RenderClear(mn->ren);
-        while (SDL_PollEvent(&e)) {
-            if (e.type == SDL_QUIT) {
-                run = false;
-                mn->gm->isover = true;
-                break;
-            }
-            else if (e.type == SDL_MOUSEBUTTONDOWN) {
-                mx = e.button.x;
-                my = e.button.y;
-                clicked = true;
-                flag = e.button.button == SDL_BUTTON_RIGHT;
-            }
-        }
-        if (clicked) {
-            update_game(mn->gm, mx, my, flag);
-            gamover = mn->gm->isover;
-            clicked = false;
-            flag = false;
-        }
-        if (gamover)
-            stop_clock(mn->cl);
-        show_clock(mn->cl);
-        draw_grid(mn->gm);
-        SDL_RenderPresent(mn->ren);
-    }
-    destroy_clock(mn->cl);
-    clean_game(mn->gm);
-}
 
 void load_font(manager *mn, const char *path, usize size) {
     mn->font = TTF_OpenFont(path, size);
@@ -207,6 +243,8 @@ void load_images_textures(manager *mn, const char *path) {
 
 void clean_manager(manager *mn) {
     dict_clean(mn->textures);
+    destroy_clock(mn->clock);
+    clean_game(mn->gm);
     TTF_CloseFont(mn->font);
     SDL_DestroyRenderer(mn->ren);
     SDL_DestroyWindow(mn->win);

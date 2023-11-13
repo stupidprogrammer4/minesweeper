@@ -2,7 +2,6 @@
 
 #include "game.h"
 #include "manager.h"
-#include "clock.h"
 
 static inline 
 void reveal(game *gm, int x, int y);
@@ -83,15 +82,19 @@ void flag(game *gm, int x, int y) {
     if (gm->grid[y][x]->flagged) {
         change_image(gm, &gm->grid[y][x], "default");
         if (gm->grid[y][x]->is_mine)
-            gm->mine_count++;
+            gm->mine_rem++;
         gm->grid[y][x]->flagged = false;
+        gm->flags++;
     }
     else {
         change_image(gm, &gm->grid[y][x], "flag");
         if (gm->grid[y][x]->is_mine)
-            gm->mine_count--;
+            gm->mine_rem--;
         gm->grid[y][x]->flagged = true;
+        gm->flags--;
     }
+    sprintf(gm->rem_flags, "%d/%d", gm->flags, gm->mine_count);
+    gm->win = gm->mine_rem == 0;
 }
 
 static inline 
@@ -104,7 +107,7 @@ void reveal(game *gm, int x, int y) {
     change_image(gm, &gm->grid[y][x], key);
     gm->grid[y][x]->revealed = true;
     if (gm->grid[y][x]->is_mine) {
-        gm->isover = true;
+        gm->over = true;
         for (int i=0; i<gm->row; i++)
             for (int j=0; j<gm->col; j++)
                 if (gm->grid[i][j]->is_mine)
@@ -172,16 +175,20 @@ cell *init_cell(game *gm, int x, int y, int w, int h) {
 }
 
 game *init_game(manager *mn, int row, int col, 
-        int st_row, int st_col, int tile_size, int mine_count)
+        int st_row, int st_col, ui_clock *clock, int tile_size, int mine_count)
 {
     game *gm = malloc(sizeof(game));
     gm->row = row;
     gm->col = col;
     gm->mine_count = mine_count;
-    gm->isover = false;
+    gm->over = false;
+    gm->win = false;
     gm->st_row = st_row;
     gm->st_col = st_col;
+    gm->mine_rem = mine_count;
+    gm->flags = 0;
     gm->mn = mn;
+    gm->clock = clock;
     build2dgrid(gm, row, col, tile_size);
     set_random_mine(gm, mine_count);
     for (int i=0; i<row; i++)
@@ -197,7 +204,7 @@ void draw_grid(game *gm) {
 }
 
 void update_game(game *gm, int mx, int my, bool rightclick) {
-    if (gm->isover)
+    if (gm->over || gm->win)
         return;
     for (int i=0; i<gm->row; i++) {
         for (int j=0; j<gm->col; j++){
@@ -207,8 +214,8 @@ void update_game(game *gm, int mx, int my, bool rightclick) {
                     reveal(gm, j, i);
                 else
                     flag(gm, j, i);
-                if (gm->mn->cl->stopped)
-                    start_clock(gm->mn->cl);
+                if (gm->clock->stopped)
+                    start_clock(gm->clock);
                 return;
             }
         }
@@ -223,8 +230,7 @@ void clean_game(game *gm) {
     for (int i=0; i<gm->row; i++)
         free(gm->grid[i]);
 
-    free(gm->grid);
-    
+    free(gm->grid);  
     ls_clean(gm->tiles);
     free(gm);
 }
