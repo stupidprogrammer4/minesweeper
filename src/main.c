@@ -14,7 +14,7 @@
 int main(int argc, char *argv[]) {
     SDL_Color bg = {102, 178, 255, 255};
     manager *mn = init_manager("minesweeper", SCREEN_WIDTH, SCREEN_HEIGHT, 
-                        SDL_INIT_VIDEO, 0, 0, IMG_INIT_PNG, fg);
+                        SDL_INIT_VIDEO, 0, 0, IMG_INIT_PNG, bg);
     load_images_textures(mn, "../res/gfx");
     load_font(mn, "../res/font/font.ttf", DEF_FONT_SIZE);
     build_game(mn, ROW, COL, TILE_SIZE, MINE_COUNT);
