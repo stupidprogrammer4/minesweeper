@@ -77,6 +77,10 @@ void stop_clock(ui_clock *cl) {
     }
 }
 
+void destroy_button(ui_button *button) {
+	free(button);
+}
+
 void destroy_clock(ui_clock *cl) {
     if (!cl->stopped)
         SDL_RemoveTimer(cl->timer);
