@@ -1,6 +1,6 @@
 # Minesweeper
 
-## This game implemented by C and <a href="https://www.libsdl.org/">SDL2</a> library
+## This game implemented Using C and <a href="https://www.libsdl.org/">SDL2</a> library
 ### Game Menue
 ![alt text for screen readers](./screenshots/menu.png "menu screenshot")
 ### Game Screenshots
