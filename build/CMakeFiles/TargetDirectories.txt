@@ -1,3 +1,0 @@
-/home/joker/programming/mabani_projects/minesweeper/build/CMakeFiles/minesweeper.dir
-/home/joker/programming/mabani_projects/minesweeper/build/CMakeFiles/edit_cache.dir
-/home/joker/programming/mabani_projects/minesweeper/build/CMakeFiles/rebuild_cache.dir
