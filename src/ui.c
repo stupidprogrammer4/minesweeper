@@ -15,12 +15,11 @@ unsigned int clock_callback(unsigned int interval, void *param) {
     return interval;
 }
 
-ui_button *init_button(SDL_Rect rect, SDL_Color fg, SDL_Color bg, 
+ui_button *init_button(SDL_Rect rect, SDL_Color bg,
         SDL_Texture *texture, char *text, int tw, int th) 
 {
     ui_button *button = malloc(sizeof(ui_button));
     button->bg = bg;
-    button->fg = fg;
     button->rect = rect;
     button->texture = texture;
     usize n = strlen(text);

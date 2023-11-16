@@ -7,7 +7,7 @@ struct MANAGER_;
 
 typedef struct BUTTON_ {
   SDL_Rect rect, trect;
-  SDL_Color fg, bg;
+  SDL_Color bg;
   SDL_Texture *texture;
   char *text;
   int tw, th;
@@ -25,7 +25,7 @@ typedef struct CLOCK_ {
 
 } ui_clock;
 
-ui_button *init_button(SDL_Rect rect, SDL_Color fg, SDL_Color bg,
+ui_button *init_button(SDL_Rect rect, SDL_Color bg,
                        SDL_Texture *texture, char *text, int tw, int th);
 void show_button(ui_button *button, SDL_Renderer *ren);
 bool is_clicked(ui_button *button, int mx, int my);

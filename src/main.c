@@ -4,7 +4,7 @@
 #include "manager.h"
 #include "game.h"
 
-#define SCREEN_WIDTH 1100
+#define SCREEN_WIDTH 1120
 #define SCREEN_HEIGHT 900
 #define TILE_SIZE 50
 #define ROW 16

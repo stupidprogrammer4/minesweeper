@@ -47,6 +47,7 @@ typedef struct GAME_
 game *init_game(struct MANAGER_ *mn, int row, int col, 
         int st_row, int st_col, ui_clock *clock, int tile_size, int mine_count);
 void draw_grid(game *gm);
+void reset(game *gm);
 void update_game(game *gm, int mx, int my, bool rightclick);
 void clean_game(game *gm);
 

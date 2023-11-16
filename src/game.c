@@ -2,6 +2,7 @@
 
 #include "game.h"
 #include "manager.h"
+#include "utils.h"
 
 static inline 
 void reveal(game *gm, int x, int y);
@@ -84,14 +85,14 @@ void flag(game *gm, int x, int y) {
         if (gm->grid[y][x]->is_mine)
             gm->mine_rem++;
         gm->grid[y][x]->flagged = false;
-        gm->flags++;
+        gm->flags--;
     }
     else {
         change_image(gm, &gm->grid[y][x], "flag");
         if (gm->grid[y][x]->is_mine)
             gm->mine_rem--;
         gm->grid[y][x]->flagged = true;
-        gm->flags--;
+        gm->flags++;
     }
     sprintf(gm->rem_flags, "%d/%d", gm->flags, gm->mine_count);
     gm->win = gm->mine_rem == 0;
@@ -203,6 +204,32 @@ void draw_grid(game *gm) {
             SDL_RenderCopy(gm->mn->ren, gm->grid[i][j]->image, NULL, &gm->grid[i][j]->rect);
 }
 
+void reset(game *gm) {
+    gm->over = false;
+    gm->win = false;
+    gm->flags = 0;
+    gm->mine_rem = gm->mine_count;
+    gm->clock->elapsed_sec = 0;
+    sprintf(gm->clock->time, "00:00");
+    ls_clear(gm->tiles);
+
+    for (int i=0; i<gm->row; i++) {
+        for (int j=0; j<gm->col; j++) {
+            gm->grid[i][j]->image = DICT_GET_VAL(SDL_Texture *, gm->mn->textures, "default");
+            gm->grid[i][j]->revealed = gm->grid[i][j]->flagged = 0;
+            gm->grid[i][j]->neighbour_count = 0;
+            gm->grid[i][j]->is_mine = 0;
+            pair *p = construct_pair(j, i);
+            ls_append(gm->tiles, &p);
+        }
+    }
+
+    set_random_mine(gm, gm->mine_count);
+    for (int i=0; i<gm->row; i++)
+        for (int j=0; j<gm->col; j++)
+            set_neigbour_count(gm, j, i);
+}
+
 void update_game(game *gm, int mx, int my, bool rightclick) {
     if (gm->over || gm->win)
         return;
@@ -221,6 +248,7 @@ void update_game(game *gm, int mx, int my, bool rightclick) {
         }
     }  
 }
+
 
 void clean_game(game *gm) {
     for (int i=0; i<gm->row; i++)
