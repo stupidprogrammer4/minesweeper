@@ -153,7 +153,7 @@ manager *init_manager(const char *title, int screen_width, int screen_height,
 
 void build_menu_ui(manager *mn) {
     int i;
-    char *items[] = {"10*10", "15*15", "20*20", "30*30", "load"};
+    char *items[] = {"10*10", "15*15", "20*20", "30*30"};
     for (i=0; i<5; i++) {
         SDL_Texture *texture = create_text_texture(mn->ren, items[i], mn->font, mn->back_color);
         dict_insert(mn->textures, items[i], &texture);
@@ -164,9 +164,6 @@ void build_menu_ui(manager *mn) {
         SDL_Texture *texture = DICT_GET_VAL(SDL_Texture *, mn->textures, items[i]);
         menu_buttons[i] = init_button(rect, def_btn, texture, items[i], 100, 50);
     }
-    //SDL_Texture *texture = DICT_GET_VAL(SDL_Texture *, mn->textures, "load");
-    //SDL_Rect rect = {mn->screen_width/2-(DEF_BTN_SW/2), h+h+40, DEF_BTN_SW, DEF_BTN_SH};
-    //menu_buttons[4] = init_button(rect, mn->back_color, def_btn, texture, "load", DEF_BTN_SW-40, DEF_BTN_SH-10);
 }
 
 void run_game(manager *mn) {
@@ -198,6 +195,10 @@ void run_game(manager *mn) {
         stop_clock(mn->clock);
         SDL_RenderCopy(mn->ren, DICT_GET_VAL(SDL_Texture *, mn->textures, "YOU LOSE!"), NULL, &state);
     }
+    if (mn->gm->win) {
+        stop_clock(mn->clock);
+        SDL_RenderCopy(mn->ren, DICT_GET_VAL(SDL_Texture *, mn->textures, "YOU WIN!"), NULL, &state);
+    }
     for (int i=0; i<2; i++) 
         show_button(game_buttons[i], mn->ren);
     show_flags(mn->gm);
@@ -209,7 +210,9 @@ void build_game_ui(manager *mn) {
     char *items[] = {"reset", "change difficulty"};
     mn->clock = init_clock(mn, mn->font, cl_rect, black);
     SDL_Texture *losing = create_text_texture(mn->ren, "YOU LOSE!", mn->font, red);
+    SDL_Texture *winning = create_text_texture(mn->ren, "YOU WIN!", mn->font, green);
     dict_insert(mn->textures, "YOU LOSE!", &losing);
+    dict_insert(mn->textures, "YOU WIN!", &winning);
 
     for (int i=0; i<2; i++) {
         SDL_Rect rect = {mn->screen_height+10, mn->screen_height-((i+1)*(DEF_BTN_SH+20)), DEF_BTN_SW, DEF_BTN_SH};
