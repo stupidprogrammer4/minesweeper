@@ -21,6 +21,7 @@ int main(int argc, char *argv[]) {
     load_font(mn, "../res/font/font.ttf", DEF_FONT_SIZE);
     build_menu_ui(mn); 
     build_game_ui(mn);
+    mn->gm = init_game(mn);
     while (mn->run) {
         SDL_SetRenderDrawColor(mn->ren, mn->back_color.r, mn->back_color.g, mn->back_color.b, mn->back_color.a);
         SDL_RenderClear(mn->ren);

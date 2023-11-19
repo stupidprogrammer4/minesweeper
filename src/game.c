@@ -137,7 +137,6 @@ void set_neigbour_count(game *gm, int x, int y) {
 
 static inline
 void build2dgrid(game *gm, int row, int col, int tile_size) {
-    gm->tiles = init_list(sizeof(pair *), cmp_pair, NULL);
     gm->grid = malloc(sizeof(cell **)*row);
     for (int i=0; i<row; i++) {
         gm->grid[i] = malloc(sizeof(cell *)*col);
@@ -147,6 +146,7 @@ void build2dgrid(game *gm, int row, int col, int tile_size) {
             ls_append(gm->tiles, &p);
         }
     }
+    
 }
 
 static inline 
@@ -175,10 +175,21 @@ cell *init_cell(game *gm, int x, int y, int w, int h) {
     return c;
 }
 
-game *init_game(manager *mn, int row, int col, 
-        int st_row, int st_col, ui_clock *clock, int tile_size, int mine_count)
+game *init_game(manager *mn)
 {
     game *gm = malloc(sizeof(game));
+    gm->tiles = init_list(sizeof(pair *), cmp_pair, NULL);
+    gm->grid = NULL;
+    gm->mn = mn;
+    gm->clock = mn->clock;
+    return gm;
+}
+
+void set_game(game *gm, int row, int col, 
+        int st_row, int st_col, int tile_size, int mine_count) 
+{
+    if (gm->grid && gm->tiles->size)
+        clean_game_res(gm);
     gm->row = row;
     gm->col = col;
     gm->mine_count = mine_count;
@@ -188,14 +199,11 @@ game *init_game(manager *mn, int row, int col,
     gm->st_col = st_col;
     gm->mine_rem = mine_count;
     gm->flags = 0;
-    gm->mn = mn;
-    gm->clock = clock;
     build2dgrid(gm, row, col, tile_size);
     set_random_mine(gm, mine_count);
     for (int i=0; i<row; i++)
         for (int j=0; j<col; j++)
             set_neigbour_count(gm, j, i);
-    return gm;
 }
 
 void draw_grid(game *gm) {
@@ -209,8 +217,7 @@ void reset(game *gm) {
     gm->win = false;
     gm->flags = 0;
     gm->mine_rem = gm->mine_count;
-    gm->clock->elapsed_sec = 0;
-    sprintf(gm->clock->time, "00:00");
+    reset_clock(gm->clock);
     ls_clear(gm->tiles);
 
     for (int i=0; i<gm->row; i++) {
@@ -249,16 +256,26 @@ void update_game(game *gm, int mx, int my, bool rightclick) {
     }  
 }
 
+void clean_game_res(game *gm) {
+    ls_clear(gm->tiles);
+    if (gm->grid) {
+        for (int i=0; i<gm->row; i++)
+            for (int j=0; j<gm->col; j++)
+                if (gm->grid[i][j])
+                    free(gm->grid[i][j]);
+        
+        for (int i=0; i<gm->row; i++)
+            free(gm->grid[i]);
+
+        free(gm->grid);
+
+        gm->grid = NULL;
+    }
+}
+
 
 void clean_game(game *gm) {
-    for (int i=0; i<gm->row; i++)
-        for (int j=0; j<gm->col; j++)
-            free(gm->grid[i][j]);
-
-    for (int i=0; i<gm->row; i++)
-        free(gm->grid[i]);
-
-    free(gm->grid);  
+    clean_game_res(gm);
     ls_clean(gm->tiles);
     free(gm);
 }

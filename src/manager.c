@@ -9,7 +9,8 @@
 #define DEF_BTN_SW 200
 #define DEF_BTN_SH 50
 
-SDL_Rect cl_rect = {950, 15, 70, 20}, fl_rect = {950, 35, 70, 20};
+SDL_Rect cl_rect = {950, 15, 70, 20}, 
+fl_rect = {950, 45, 70, 20}, state = {900, 400, 200, 100};;
 SDL_Color black = {0, 0, 0, 255};
 SDL_Color white = {255, 255, 255, 255};
 SDL_Color red = {255, 0, 0, 255};
@@ -55,6 +56,7 @@ void update_game_ui(manager *mn, int i) {
     switch (i)
     {
     case 1:
+        reset_clock(mn->clock);
         mn->state = 0;
         break;
     case 0:
@@ -116,7 +118,6 @@ manager *init_manager(const char *title, int screen_width, int screen_height,
     mn->back_color = back_color;
     mn->state = 0;
     mn->run = 1;
-    mn->gm = NULL;
     mn->textures = def_init_dict(sizeof(SDL_Texture *), destroy_texture_helper);
     if (SDL_Init(sdl_flags) < 0) {
         fprintf(stderr, "SDL_Init() failed: %s\n", SDL_GetError());
@@ -166,8 +167,7 @@ void build_menu_ui(manager *mn) {
     }
 }
 
-void run_game(manager *mn) {
-    SDL_Rect state = {900, mn->screen_height/2+10, 200, 100};
+void run_game(manager *mn) { 
     bool clicked=0, rightclick=0;
     int mx, my;
     while (SDL_PollEvent(&mn->e)) {
@@ -266,8 +266,8 @@ void run_menu(manager *mn) {
 void build_game(manager *mn, int row, int col, 
         int tile_size, int mine_count) 
 {
-    mn->gm = init_game(mn, row, col, 0, 
-            0, mn->clock, tile_size, mine_count);
+    set_game(mn->gm, row, col, 0, 
+            0, tile_size, mine_count);
 }
 
 

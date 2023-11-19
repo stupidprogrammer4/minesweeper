@@ -44,11 +44,13 @@ typedef struct GAME_
     list *tiles;
 } game;
 
-game *init_game(struct MANAGER_ *mn, int row, int col, 
-        int st_row, int st_col, ui_clock *clock, int tile_size, int mine_count);
+game *init_game(struct MANAGER_ *mn);
 void draw_grid(game *gm);
+void set_game(game *gm, int row, int col, 
+        int st_row, int st_col, int tile_size, int mine_count);
 void reset(game *gm);
 void update_game(game *gm, int mx, int my, bool rightclick);
+void clean_game_res(game *gm);
 void clean_game(game *gm);
 
 #endif //__GAME__
