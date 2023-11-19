@@ -76,6 +76,12 @@ void stop_clock(ui_clock *cl) {
     }
 }
 
+void reset_clock(ui_clock *cl) {
+    stop_clock(cl);
+    cl->elapsed_sec = 0;
+    sprintf(cl->time, "00:00");
+}
+
 void destroy_button(ui_button *button) {
 	free(button);
 }

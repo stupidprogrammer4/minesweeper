@@ -34,6 +34,7 @@ ui_clock *init_clock(struct MANAGER_ *mn, TTF_Font *font, SDL_Rect rect,
 void start_clock(ui_clock *cl);
 void show_clock(ui_clock *cl);
 void stop_clock(ui_clock *cl);
+void reset_clock(ui_clock *cl);
 void destroy_clock(ui_clock *cl);
 void destroy_button(ui_button *button);
 
